@@ -37,6 +37,7 @@ class MovieSerializer(serializers.ModelSerializer):
 
 
 class MovieImageSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField()
 
     class Meta:
         model = Movie
@@ -50,7 +51,15 @@ class MovieListSerializer(MovieSerializer):
     actors = serializers.SlugRelatedField(
         many=True, read_only=True, slug_field="full_name"
     )
-    image = serializers.ImageField(read_only=True)
+    image = serializers.ImageField()
+
+    def get_image(self, obj):
+        request = self.context.get("request")
+        if obj.image and request:
+            return request.build_absolute_uri(obj.image.url)
+        elif obj.image:
+            return obj.image.url
+        return None
 
     class Meta:
         model = Movie
@@ -68,7 +77,15 @@ class MovieListSerializer(MovieSerializer):
 class MovieDetailSerializer(MovieSerializer):
     genres = GenreSerializer(many=True, read_only=True)
     actors = ActorSerializer(many=True, read_only=True)
-    image = serializers.ImageField(read_only=True)
+    image = serializers.SerializerMethodField()
+
+    def get_image(self, obj):
+        request = self.context.get("request")
+        if obj.image and request:
+            return request.build_absolute_uri(obj.image.url)
+        elif obj.image:
+            return obj.image.url
+        return None
 
     class Meta:
         model = Movie
@@ -91,7 +108,7 @@ class MovieSessionSerializer(serializers.ModelSerializer):
 
 class MovieSessionListSerializer(MovieSessionSerializer):
     movie_title = serializers.CharField(source="movie.title", read_only=True)
-    movie_image = serializers.ImageField(source="movie.image", read_only=True)
+    movie_image = serializers.SerializerMethodField()
     cinema_hall_name = serializers.CharField(
         source="cinema_hall.name", read_only=True
     )
@@ -99,6 +116,14 @@ class MovieSessionListSerializer(MovieSessionSerializer):
         source="cinema_hall.capacity", read_only=True
     )
     tickets_available = serializers.IntegerField(read_only=True)
+
+    def get_movie_image(self, obj):
+        request = self.context.get("request")
+        if obj.movie.image and request:
+            return request.build_absolute_uri(obj.movie.image.url)
+        elif obj.movie.image:
+            return obj.movie.image.url
+        return None
 
     class Meta:
         model = MovieSession

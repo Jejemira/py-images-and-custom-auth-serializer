@@ -104,10 +104,14 @@ class MovieViewSet(
 
         if self.action == "retrieve":
             return MovieDetailSerializer
-        elif self.action == "upload_image":
+        if self.action == "upload_image":
             return MovieImageSerializer
 
         return MovieSerializer
+
+    def get_serializer_context(self):
+        """Ensure serializers have access to request for absolute URLs"""
+        return {"request": self.request}
 
     @action(
         methods=["POST"],
@@ -118,9 +122,10 @@ class MovieViewSet(
     )
     def upload_image(self, request, pk=None):
         movie = self.get_object()
+        data = {"image": request.data.get("image")}
         serializer = self.get_serializer(
             movie,
-            data=request.data,
+            data=data,
             partial=True
         )
 
